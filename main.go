@@ -9,7 +9,6 @@ import (
 	"github.com/Av1shay/adstext-search/search"
 	"html/template"
 	"log"
-	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -53,7 +52,7 @@ func main() {
 	log.Fatal(http.ListenAndServe(":"+defaultPort, nil))
 }
 
-func IndexHandle(tmpl *template.Template, searchClient *search.Client) func(w http.ResponseWriter, r *http.Request) {
+func IndexHandle(tmpl *template.Template, searchClient *search.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			if err := tmpl.Execute(w, SearchMacro{}); err != nil {
@@ -155,14 +154,4 @@ func parseFormValues(linesRaw, domainsRaw string) ([]model.AdstxtLine, []string,
 	}
 
 	return adstxtLines, domains, nil
-}
-
-func createListener() (l net.Listener, close func()) {
-	l, err := net.Listen("tcp", ":0")
-	if err != nil {
-		panic(err)
-	}
-	return l, func() {
-		_ = l.Close()
-	}
 }
