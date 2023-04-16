@@ -9,6 +9,4 @@ COPY . ./
 
 RUN go build -o /adstext-search
 
-EXPOSE 8080
-
 CMD [ "/adstext-search" ]

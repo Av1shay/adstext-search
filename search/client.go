@@ -13,7 +13,6 @@ import (
 
 const (
 	lineSep = ":_:"
-	ua      = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
 )
 
 var linesPool = sync.Pool{
@@ -22,16 +21,22 @@ var linesPool = sync.Pool{
 	},
 }
 
+type Config struct {
+	UserAgent string
+	Workers   int
+}
+
 type Client struct {
+	config     Config
 	httpClient *http.Client
 }
 
-func NewClient(httpClient *http.Client) *Client {
-	return &Client{httpClient}
+func NewClient(config Config, httpClient *http.Client) *Client {
+	return &Client{config, httpClient}
 }
 
 func (c *Client) Do(ctx context.Context, lines []model.AdstxtLine, domains []string) (map[string][]model.AdstxtLine, error) {
-	workers := 10
+	workers := c.config.Workers
 	wg := sync.WaitGroup{}
 	wg.Add(workers)
 	domainsChan := make(chan string, workers)
@@ -75,7 +80,7 @@ func (c *Client) findMissingAdstxtLines(ctx context.Context, domain string, line
 	if err != nil {
 		return nil, fmt.Errorf("http.NewRequest: %s", err)
 	}
-	req.Header.Set("User-Agent", ua)
+	req.Header.Set("User-Agent", c.config.UserAgent)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to GET %s: %s", u, err)

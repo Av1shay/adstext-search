@@ -69,18 +69,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	lines, domains, err := parseFormValues(linesRaw, domainsRaw)
 	if err != nil {
 		if err := s.indexTmpl.Execute(w, SearchMacro{Err: err.Error()}); err != nil {
-			log.Println("failed to execute template:", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("something went wrong :("))
+			handleServerError(w, err, "failed to execute template")
 		}
 		return
 	}
 	searchRes, err := s.searchClient.Do(ctx, lines, domains)
 	if err != nil {
 		if err := s.indexTmpl.Execute(w, SearchMacro{Err: err.Error()}); err != nil {
-			log.Println("failed to execute template:", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("something went wrong :("))
+			handleServerError(w, err, "failed to execute template")
 		}
 		return
 	}
@@ -108,10 +104,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Lines:         linesRaw,
 		Domains:       domainsRaw,
 	}); err != nil {
-		log.Println("failed to execute template:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("something went wrong :("))
+		handleServerError(w, err, "failed to execute template")
 	}
+}
+
+func handleServerError(w http.ResponseWriter, err error, logMsg string) {
+	log.Println(logMsg, err)
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte("something went wrong :("))
 }
 
 func parseFormValues(linesRaw, domainsRaw string) ([]model.AdstxtLine, []string, error) {
